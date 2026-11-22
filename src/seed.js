@@ -262,6 +262,7 @@ export function seedData() {
       const moData = {}
       sh.groups.forEach(gr => gr.rows.forEach(row => {
         const key = row[1]
+        if (key == null) return // sub-header row, no data
         if (sk === 'fp') { moData[key] = rnd(9); moData[key + '_nhts'] = rnd(Math.max(1, moData[key] + 1)) }
         else if (key.startsWith('del_10_14')) { moData[key] = rnd(2) }
         else if (key.startsWith('del_15_19')) { moData[key] = rnd(4) }
@@ -283,6 +284,7 @@ export function seedReportValues(db) {
       const sh = REP_SHEETS[sk]
       sh.groups.forEach(gr => gr.rows.forEach(row => {
         const key = row[1]
+        if (key == null) return // sub-header row, no data
         if (sk === 'fp') { out[key] = rnd(9); out[key + '_nhts'] = rnd(Math.max(1, out[key] + 1)) }
         else if (key.startsWith('del_10_14')) { out[key] = rnd(2) }
         else if (key.startsWith('del_15_19')) { out[key] = rnd(4) }

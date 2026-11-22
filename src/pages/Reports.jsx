@@ -50,16 +50,20 @@ export default function Reports() {
     rows.push(header)
     def.groups.forEach(gr => {
       rows.push(['', gr.name].concat(cols.map(() => '')).concat(['']))
-      gr.rows.forEach((row, i) => {
+      gr.rows.forEach(row => {
+        if (row[1] == null) {
+          rows.push(['', row[0]].concat(cols.map(() => '')).concat(['']))
+          return
+        }
         const vals = cols.map(c => getVal(mkeyOf(c), row[1]))
         const tot = vals.reduce((a, b) => a + b, 0)
-        rows.push([String(i + 1), row[0]].concat(vals.map(String)).concat([String(tot)]))
+        rows.push(['', row[0].replace(/^\s+/, '')].concat(vals.map(String)).concat([String(tot)]))
       })
     })
     downloadCSV('BHW_MonthlyReport_' + sheet + '_' + month, rows)
   }
 
-  const nrows = def.groups.reduce((a, g) => a + g.rows.length, 0)
+  const nrows = def.groups.reduce((a, g) => a + g.rows.filter(r => r[1] != null).length, 0)
 
   return (
     <section>
@@ -116,12 +120,22 @@ export default function Reports() {
                   <tr><td className="group-cell" colSpan={cols.length + 3}>{gr.name}</td></tr>
                   {gr.rows.map(row => {
                     const [label, key] = row
+                    // sub-header row (key === null): a section divider within the group
+                    if (key == null) {
+                      return (
+                        <tr className="sub-row" key={'sub_' + label}>
+                          <td className="sub-cell" colSpan={cols.length + 3}>{label}</td>
+                        </tr>
+                      )
+                    }
                     const vals = cols.map(c => getVal(mkeyOf(c), key))
                     const tot = vals.reduce((a, b) => a + b, 0)
+                    // child rows carry leading whitespace in their label → indented
+                    const isChild = /^\s/.test(label)
                     return (
-                      <tr className="data-row" key={key}>
+                      <tr className={'data-row' + (isChild ? ' ind' : '')} key={key}>
                         <td className="rownum"></td>
-                        <td className="label-cell"><span className="lab">{label}</span></td>
+                        <td className="label-cell"><span className="lab">{label.replace(/^\s+/, '')}</span></td>
                         {cols.map(c => {
                           const mkey = mkeyOf(c)
                           return (
@@ -141,11 +155,11 @@ export default function Reports() {
                 <td className="group-cell" style={{ background: 'var(--g600)' }}>TOTAL</td>
                 <td className="label-cell" style={{ background: 'var(--g025)' }}><span className="lab"><b>All items</b></span></td>
                 {cols.map(c => {
-                  const sum = def.groups.reduce((a, gr) => a + gr.rows.reduce((b, row) => b + getVal(mkeyOf(c), row[1]), 0), 0)
+                  const sum = def.groups.reduce((a, gr) => a + gr.rows.reduce((b, row) => b + (row[1] == null ? 0 : getVal(mkeyOf(c), row[1])), 0), 0)
                   return <td className="tot-cell" key={c}>{sum}</td>
                 })}
                 <td className="tot-cell" style={{ background: 'var(--g100)' }}>
-                  {cols.reduce((a, c) => a + def.groups.reduce((b, gr) => b + gr.rows.reduce((x, row) => x + getVal(mkeyOf(c), row[1]), 0), 0), 0)}
+                  {cols.reduce((a, c) => a + def.groups.reduce((b, gr) => b + gr.rows.reduce((x, row) => x + (row[1] == null ? 0 : getVal(mkeyOf(c), row[1])), 0), 0), 0)}
                 </td>
               </tr>
             </tbody>

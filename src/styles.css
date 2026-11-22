@@ -380,6 +380,8 @@ select.compact{padding-right:30px;min-width:128px}
 .grid-table tr.data-row:hover td.rownum{background:var(--g100);color:var(--g700)}
 .grid-table td.tot-cell{background:var(--g050);font-weight:800;color:var(--g800);text-align:right;font-variant-numeric:tabular-nums;border-top:2px solid var(--g300)}
 .grid-table td.group-cell{background:var(--g800);color:#e6f2ea;font-weight:800;font-size:.74rem;letter-spacing:.04em;padding:8px 10px}
+.grid-table td.sub-cell{background:var(--g600);color:#e6f2ea;font-weight:700;font-size:.72rem;letter-spacing:.03em;padding:6px 10px 6px 16px}
+.grid-table tr.data-row.ind td.label-cell .lab{padding-left:26px}
 .grid-table td.label-cell{background:#fff}
 .grid-table td.label-cell .lab{padding:7px 10px;font-size:.78rem;color:var(--ink);display:block}
 .ws-foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid var(--line);background:var(--g025)}
