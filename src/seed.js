@@ -263,9 +263,9 @@ export function seedData() {
       sh.groups.forEach(gr => gr.rows.forEach(row => {
         const key = row[1]
         if (sk === 'fp') { moData[key] = rnd(9); moData[key + '_nhts'] = rnd(Math.max(1, moData[key] + 1)) }
-        else if (key === 'del_10_14') { moData[key] = rnd(2) }
-        else if (key === 'del_15_19') { moData[key] = rnd(4) }
-        else if (key === 'del_20_49') { moData[key] = rnd(9) }
+        else if (key.startsWith('del_10_14')) { moData[key] = rnd(2) }
+        else if (key.startsWith('del_15_19')) { moData[key] = rnd(4) }
+        else if (key.startsWith('del_20_49')) { moData[key] = rnd(9) }
         else { moData[key] = rnd(24) }
       }))
       db.report[mo][sk] = moData
@@ -284,9 +284,9 @@ export function seedReportValues(db) {
       sh.groups.forEach(gr => gr.rows.forEach(row => {
         const key = row[1]
         if (sk === 'fp') { out[key] = rnd(9); out[key + '_nhts'] = rnd(Math.max(1, out[key] + 1)) }
-        else if (key === 'del_10_14') { out[key] = rnd(2) }
-        else if (key === 'del_15_19') { out[key] = rnd(4) }
-        else if (key === 'del_20_49') { out[key] = rnd(9) }
+        else if (key.startsWith('del_10_14')) { out[key] = rnd(2) }
+        else if (key.startsWith('del_15_19')) { out[key] = rnd(4) }
+        else if (key.startsWith('del_20_49')) { out[key] = rnd(9) }
         else { out[key] = rnd(24) }
       }))
     })

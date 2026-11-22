@@ -32,7 +32,7 @@ create type app_role    as enum ('bhw', 'rhm', 'admin');
 create type record_cat  as enum ('Child Health', 'Maternal Health', 'Immunization', 'Family Planning', 'Other Health Records');
 create type mon_status  as enum ('On Track', 'Due Soon', 'Overdue', 'Completed');
 create type health_stat as enum ('Active', 'Under Observation', 'Referred', 'Follow-up Required', 'Resolved', 'Completed');
-create type report_sheet as enum ('vitA', 'vac', 'tb', 'fp');
+create type report_sheet as enum ('vitA', 'nip', 'tb', 'fp');
 
 -- ============ helper: updated_at maintenance ============
 create or replace function public.touch_updated_at()

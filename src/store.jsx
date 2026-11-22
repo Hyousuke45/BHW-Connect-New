@@ -5,6 +5,9 @@ import { uid, today, nowTime } from './utils'
 
 const LS_KEY = 'bhwConnectDB'
 
+// small helper for migrations (0-9, like the seeder)
+const rnd9 = () => Math.floor(Math.random() * 10)
+
 function loadDB() {
   try {
     const s = localStorage.getItem(LS_KEY)
@@ -36,6 +39,29 @@ export function StoreProvider({ children }) {
       const s = seedData()
       d.report = s.report
     }
+    // migrate old delivery keys (del_10_14 etc.) to the 5-row age-group layout
+    const DEL_AGE = ['10_14', '15_19', '20_49']
+    Object.keys(d.report).forEach(mk => {
+      const sd = d.report[mk] && d.report[mk].nip
+      if (!sd) return
+      if (!('del_10_14_male' in sd)) {
+        DEL_AGE.forEach(a => {
+          const old = sd['del_' + a]
+          if (old != null) {
+            // split the old combined count across the new rows
+            const male = Math.round(old / 2)
+            sd['del_' + a + '_male'] = male
+            sd['del_' + a + '_female'] = old - male
+            sd['del_' + a + '_gov'] = rnd9()
+            sd['del_' + a + '_pvt'] = rnd9()
+            sd['del_' + a + '_lying'] = rnd9()
+            delete sd['del_' + a]
+          }
+        })
+      }
+      // backfill the Vaccination status 0-11 months row for older DBs
+      if (!('nip_vac_0_11' in sd)) sd.nip_vac_0_11 = rnd9()
+    })
     if (!d.notifs) d.notifs = []
     if (!d.activities) d.activities = []
     if (!d.accountActs) d.accountActs = []
