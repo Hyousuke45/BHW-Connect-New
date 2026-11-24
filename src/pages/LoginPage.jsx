@@ -45,7 +45,7 @@ export default function LoginPage({ onLogin }) {
   return (
     <div id="loginPage">
       <div className="login-card">
-        <div className="login-logo"><img src="/logo.jpg" alt="BHW Connect logo" /></div>
+        <div className="login-logo"><img src="/logo.png" alt="BHW Connect logo" /></div>
         <div className="login-title">BHW Connect</div>
         <div className="login-sub">Barangay Health Worker Records System</div>
         {err && (

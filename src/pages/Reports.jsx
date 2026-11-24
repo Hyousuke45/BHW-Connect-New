@@ -68,7 +68,7 @@ export default function Reports() {
   return (
     <section>
       <div className="rep-head-band">
-        <div className="rhb-logo"><img src="/logo.jpg" alt="logo" /></div>
+        <div className="rhb-logo"><img src="/logo.png" alt="logo" /></div>
         <div>
           <div className="rhb-t">BHW MONTHLY REPORT</div>
           <div className="rhb-s">{(db.reportBHS || 'BHS: BANLAG') + ' · RHM: ' + (db.reportRHM || 'SHEILA MAE I. UY, RM') + ' · ' + month}</div>

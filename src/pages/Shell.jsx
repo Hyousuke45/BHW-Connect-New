@@ -75,7 +75,7 @@ export default function Shell({ page, onNavigate, onLogout }) {
     <div id="app">
       <aside className={'sidebar' + (sidebarOpen ? ' open' : '')}>
         <div className="sb-brand">
-          <div className="sb-logo"><img src="/logo.jpg" alt="BHW Connect logo" /></div>
+          <div className="sb-logo"><img src="/logo.png" alt="BHW Connect logo" /></div>
           <div>
             <div className="sb-name">BHW Connect</div>
             <div className="sb-tag">Health Records</div>
