@@ -7,9 +7,9 @@ import Icon from './components/Icon'
 import LoginPage from './pages/LoginPage'
 import Shell from './pages/Shell'
 import Dashboard from './pages/Dashboard'
-import Households from './pages/Households'
-import Records from './pages/Records'
-import Monitoring from './pages/Monitoring'
+import Households, { HouseholdModals } from './pages/Households'
+import Records, { RecordsModals } from './pages/Records'
+import Monitoring, { MonitoringModals } from './pages/Monitoring'
 import Reports from './pages/Reports'
 import Account from './pages/Account'
 import { useToasts } from './store'
@@ -65,6 +65,12 @@ function InnerApp() {
     <>
       <NavCtx.Provider value={nav}>
         <Shell page={page} onNavigate={go} onLogout={doLogout} />
+        {/* always-mounted modal hosts: their window-event listeners must exist on
+            every page so cross-page openers (Dashboard quick actions, member
+            profiles, report band) can open forms from anywhere */}
+        <HouseholdModals />
+        <RecordsModals />
+        <MonitoringModals />
       </NavCtx.Provider>
       <Modal modal={modal} onClose={closeModal} />
       <ConfirmDialog confirm={confirm} onClose={closeConfirm} />

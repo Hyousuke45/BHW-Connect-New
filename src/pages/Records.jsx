@@ -1,6 +1,6 @@
 // Centralized Health Records: category tabs, Excel-like worksheet with editable
 // cells + dirty state, per-category record forms, detail modal, CSV export
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../components/Icon'
 import { useStore, toast } from '../store'
 import { useNav } from '../App'
@@ -120,16 +120,8 @@ export default function Records() {
   const [dirty, setDirty] = useState({}) // recId -> count
   const [saved, setSaved] = useState(true)
 
-  // record form / detail driven by events (from other pages)
-  const [recForm, setRecForm] = useState(null) // {id?, tab, resId?}
-  const [recDetail, setRecDetail] = useState(null) // id
-  useEffect(() => {
-    const onForm = e => setRecForm({ id: null, tab: 'general', resId: e.detail.resId })
-    const onDetail = e => setRecDetail(e.detail.id)
-    window.addEventListener('open-record-form', onForm)
-    window.addEventListener('open-rec-detail', onDetail)
-    return () => { window.removeEventListener('open-record-form', onForm); window.removeEventListener('open-rec-detail', onDetail) }
-  }, [])
+  // record form / detail modals are hosted at App level (RecordsModals) and
+  // driven by window events, so they work from any page
 
   const list = useMemo(() => {
     const q = (search + ' ' + wsSearch).trim().toLowerCase()
@@ -183,22 +175,6 @@ export default function Records() {
     downloadCSV('BHW_HealthRecords_' + (tab === 'all' ? 'All' : tab), rows)
   }
 
-  const deleteRec = id => {
-    const r = db.records.find(x => x.id === id)
-    if (!r) return
-    confirmDialog({
-      kind: 'danger',
-      title: 'Delete health record ' + id + '?',
-      message: 'The record for ' + r.resName + ' (' + r.cat + ') will be removed. This cannot be undone.',
-      okLabel: 'Delete Record',
-      onOK: () => {
-        update(d => { d.records = d.records.filter(x => x.id !== id) })
-        toast('ok', 'Record deleted', 'Health record ' + id + ' was removed.')
-        setRecDetail(null)
-      },
-    })
-  }
-
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
   return (
@@ -223,7 +199,7 @@ export default function Records() {
           <button className="btn btn-line" onClick={() => toast('ok', 'Refreshed', 'Health records updated.')}><Icon name="refresh" />Refresh</button>
           <button className="btn btn-ghost" onClick={() => { setSearch(''); setWsSearch(''); setCat('all'); setTab('all'); setStatus(''); toast('info', 'Filters cleared', 'Showing all records again.') }}><Icon name="filter" />Clear Filters</button>
           <button className="btn btn-ghost" onClick={exportCSV}><Icon name="export" />Export</button>
-          <button className="btn btn-pri" onClick={() => setRecForm({ id: null, tab: tab === 'all' ? 'general' : tab, resId: null })}><Icon name="plus" />Add New Record</button>
+          <button className="btn btn-pri" onClick={() => openRecordForm()}><Icon name="plus" />Add New Record</button>
         </div>
       </div>
 
@@ -244,7 +220,7 @@ export default function Records() {
             <Icon name="search" />
             <input placeholder="Find in worksheet…" value={wsSearch} onChange={e => setWsSearch(e.target.value)} />
           </div>
-          <div className="ws-tool" onClick={() => setRecForm({ id: null, tab: tab === 'all' ? 'general' : tab, resId: null })} title="Add new record in this category">
+          <div className="ws-tool" onClick={() => openRecordForm()} title="Add new record in this category">
             <Icon name="plus" />New Row</div>
           <div className="ws-tool" onClick={() => toast('info', 'Sort', 'Column order follows the worksheet definition.')} title="Sort info">
             <Icon name="sort" />Sort</div>
@@ -307,9 +283,9 @@ export default function Records() {
                   })}
                   <td className="cell" style={{ whiteSpace: 'nowrap' }}>
                     <div className="actions">
-                      <button className="icon-btn" title="View details" onClick={() => setRecDetail(r.id)}><Icon name="eye" /></button>
-                      <button className="icon-btn" title="Edit record" onClick={() => setRecForm({ id: r.id, tab: tabOf(r.cat) })}><Icon name="edit" /></button>
-                      <button className="icon-btn del" title="Delete record" onClick={() => deleteRec(r.id)}><Icon name="trash" /></button>
+                      <button className="icon-btn" title="View details" onClick={() => openRecDetail(r.id)}><Icon name="eye" /></button>
+                      <button className="icon-btn" title="Edit record" onClick={() => window.dispatchEvent(new CustomEvent('open-record-form', { detail: { id: r.id, tab: tabOf(r.cat) } }))}><Icon name="edit" /></button>
+                      <button className="icon-btn del" title="Delete record" onClick={() => window.dispatchEvent(new CustomEvent('delete-rec', { detail: { id: r.id } }))}><Icon name="trash" /></button>
                     </div>
                   </td>
                 </tr>
@@ -328,17 +304,62 @@ export default function Records() {
         </div>
       </div>
 
-      <RecordsModals
-        recForm={recForm} setRecForm={setRecForm}
-        recDetail={recDetail} setRecDetail={setRecDetail}
-        deleteRec={deleteRec}
-      />
     </section>
   )
 }
 
-/* ============ Record form + detail modals ============ */
-function RecordsModals({ recForm, setRecForm, recDetail, setRecDetail, deleteRec }) {
+/* ============ Modals host (record form / detail) ============ */
+/* Always mounted at App level so open-record-form events from any page
+   (Dashboard quick actions, member profiles) reach these listeners. */
+export function RecordsModals() {
+  const { db, update, addActivity } = useStore()
+  const { confirmDialog, openModal, toast } = useNav()
+  const [recForm, setRecForm] = useState(null) // {id?, tab, resId?}
+  const [recDetail, setRecDetail] = useState(null) // id
+
+  useEffect(() => {
+    const onForm = e => setRecForm(e.detail && e.detail.id
+      ? { id: e.detail.id, tab: e.detail.tab, resId: e.detail.resId }
+      : { id: null, tab: (e.detail && e.detail.tab) || 'general', resId: e.detail && e.detail.resId })
+    const onDetail = e => setRecDetail(e.detail.id)
+    const onDelete = e => deleteRecRef.current && deleteRecRef.current(e.detail.id)
+    window.addEventListener('open-record-form', onForm)
+    window.addEventListener('open-rec-detail', onDetail)
+    window.addEventListener('delete-rec', onDelete)
+    return () => {
+      window.removeEventListener('open-record-form', onForm)
+      window.removeEventListener('open-rec-detail', onDetail)
+      window.removeEventListener('delete-rec', onDelete)
+    }
+  }, [])
+
+  const deleteRecRef = useRef(null)
+  deleteRecRef.current = deleteRec
+
+  function deleteRec(id) {
+    const r = db.records.find(x => x.id === id)
+    if (!r) return
+    confirmDialog({
+      kind: 'danger',
+      title: 'Delete health record ' + id + '?',
+      message: 'The record for ' + r.resName + ' (' + r.cat + ') will be removed. This cannot be undone.',
+      okLabel: 'Delete Record',
+      onOK: () => {
+        update(d => { d.records = d.records.filter(x => x.id !== id) })
+        toast('ok', 'Record deleted', 'Health record ' + id + ' was removed.')
+        setRecDetail(null)
+      },
+    })
+  }
+
+  return <RecordsModalsRender
+    recForm={recForm} setRecForm={setRecForm}
+    recDetail={recDetail} setRecDetail={setRecDetail}
+    deleteRec={deleteRec} />
+}
+
+/* render part driven entirely by the props above */
+function RecordsModalsRender({ recForm, setRecForm, recDetail, setRecDetail, deleteRec }) {
   const { db, update, addActivity } = useStore()
   const { openModal, toast } = useNav()
 

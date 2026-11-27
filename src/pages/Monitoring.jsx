@@ -1,6 +1,6 @@
 // Health Monitoring: status cards, filtered list, monitoring detail,
 // add/edit form, record-visit form, history, reschedule, mark completed
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../components/Icon'
 import { useStore, toast } from '../store'
 import { useNav } from '../App'
@@ -40,15 +40,8 @@ export default function Monitoring() {
   const [sched, setSched] = useState('')
   const [sort, setSort] = useState('sched-asc')
   const [pageNo, setPageNo] = useState(1)
-  const [monModal, setMonModal] = useState(null) // {kind:'form'|'detail'|'visit'|'history'|'resched', id?, data?}
-
-  useEffect(() => {
-    const onForm = () => setMonModal({ kind: 'form', id: null })
-    const onDetail = e => setMonModal({ kind: 'detail', id: e.detail.id })
-    window.addEventListener('open-mon-form', onForm)
-    window.addEventListener('open-mon-detail', onDetail)
-    return () => { window.removeEventListener('open-mon-form', onForm); window.removeEventListener('open-mon-detail', onDetail) }
-  }, [])
+  // monitoring modals are hosted at App level (MonitoringModals) and driven by
+  // window events, so they work from any page
 
   const stats = useMemo(() => {
     const st = { total: db.monitoring.length, on: 0, due: 0, od: 0, done: 0 }
@@ -99,26 +92,6 @@ export default function Monitoring() {
     { icon: 'okc', label: 'Completed', val: stats.done, sub: 'monitoring completed' },
   ]
 
-  const markDone = id => {
-    const m = db.monitoring.find(x => x.id === id)
-    if (!m) return
-    confirmDialog({
-      kind: 'info',
-      title: 'Mark monitoring as completed?',
-      message: 'Monitoring for ' + m.resName + ' (' + m.type + ') will be marked as Completed.',
-      okLabel: 'Mark Completed',
-      onOK: () => {
-        updateWith(d => {
-          const mm = d.monitoring.find(x => x.id === id)
-          mm.status = 'Completed'; mm.lastVisit = today()
-          d.visits.push({ id: uid(), monId: id, date: today(), type: 'Scheduled', update: 'Monitoring completed', notes: '', followUpNeeded: 'No', nextSch: '', status: 'Completed' })
-        })
-        addActivityWith('visit', 'Monitoring marked completed', m.resName)
-        toast('ok', 'Completed', 'Monitoring ' + id + ' marked as completed.')
-      },
-    })
-  }
-
   // pulled from store at render scope
   const { update, addActivity } = useStore()
   function updateWith(fn) { update(fn) }
@@ -162,7 +135,7 @@ export default function Monitoring() {
           </select></div>
         <div className="tb-right">
           <button className="btn btn-line" onClick={() => toast('ok', 'Refreshed', 'Monitoring list updated.')}><Icon name="refresh" />Refresh</button>
-          <button className="btn btn-pri" onClick={() => setMonModal({ kind: 'form', id: null })}><Icon name="plus" />Add Monitoring</button>
+          <button className="btn btn-pri" onClick={() => openMonForm()}><Icon name="plus" />Add Monitoring</button>
         </div>
       </div>
 
@@ -177,7 +150,7 @@ export default function Monitoring() {
               {rows.length ? rows.map(m => {
                 const ms = monStatusOf(m.nextSched, m.status)
                 return (
-                  <tr className="click" key={m.id} onClick={() => setMonModal({ kind: 'detail', id: m.id })}>
+                  <tr className="click" key={m.id} onClick={() => openMonDetail(m.id)}>
                     <td className="idc">{m.id}</td>
                     <td className="idc">{m.resId}</td>
                     <td><b>{m.resName}</b></td>
@@ -187,11 +160,11 @@ export default function Monitoring() {
                     <td><StatusPill s={ms} /></td>
                     <td>
                       <div className="actions">
-                        <button className="icon-btn" title="View details" onClick={e => { e.stopPropagation(); setMonModal({ kind: 'detail', id: m.id }) }}><Icon name="eye" /></button>
-                        <button className="icon-btn" title="Edit monitoring" onClick={e => { e.stopPropagation(); setMonModal({ kind: 'form', id: m.id }) }}><Icon name="edit" /></button>
-                        <button className="icon-btn" title="Record visit" onClick={e => { e.stopPropagation(); setMonModal({ kind: 'visit', id: m.id }) }}><Icon name="clipboard" /></button>
-                        <button className="icon-btn" title="Monitoring history" onClick={e => { e.stopPropagation(); setMonModal({ kind: 'history', id: m.id }) }}><Icon name="history" /></button>
-                        {ms !== 'Completed' && <button className="icon-btn" title="Mark as completed" onClick={e => { e.stopPropagation(); markDone(m.id) }}><Icon name="check" /></button>}
+                        <button className="icon-btn" title="View details" onClick={e => { e.stopPropagation(); openMonDetail(m.id) }}><Icon name="eye" /></button>
+                        <button className="icon-btn" title="Edit monitoring" onClick={e => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-mon-edit', { detail: { id: m.id } })) }}><Icon name="edit" /></button>
+                        <button className="icon-btn" title="Record visit" onClick={e => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-mon-visit', { detail: { id: m.id } })) }}><Icon name="clipboard" /></button>
+                        <button className="icon-btn" title="Monitoring history" onClick={e => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-mon-history', { detail: { id: m.id } })) }}><Icon name="history" /></button>
+                        {ms !== 'Completed' && <button className="icon-btn" title="Mark as completed" onClick={e => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('mon-mark-done', { detail: { id: m.id } })) }}><Icon name="check" /></button>}
                       </div>
                     </td>
                   </tr>
@@ -212,13 +185,63 @@ export default function Monitoring() {
         </div>
       </div>
 
-      <MonitoringModals monModal={monModal} setMonModal={setMonModal} markDone={markDone} />
     </section>
   )
 }
 
 /* ============ Monitoring modals ============ */
-function MonitoringModals({ monModal, setMonModal, markDone }) {
+/* Always mounted at App level so open-mon-* events from any page (Dashboard
+   quick actions, upcoming schedules) reach these listeners. */
+export function MonitoringModals() {
+  const { db, update, addActivity } = useStore()
+  const { confirmDialog, toast } = useNav()
+  const [monModal, setMonModal] = useState(null) // {kind:'form'|'detail'|'visit'|'history'|'resched', id?, data?}
+  const markDoneRef = useRef(null)
+
+  const markDone = id => {
+    const m = db.monitoring.find(x => x.id === id)
+    if (!m) return
+    confirmDialog({
+      kind: 'info',
+      title: 'Mark monitoring as completed?',
+      message: 'Monitoring for ' + m.resName + ' (' + m.type + ') will be marked as Completed.',
+      okLabel: 'Mark Completed',
+      onOK: () => {
+        update(d => {
+          const mm = d.monitoring.find(x => x.id === id)
+          mm.status = 'Completed'; mm.lastVisit = today()
+          d.visits.push({ id: uid(), monId: id, date: today(), type: 'Scheduled', update: 'Monitoring completed', notes: '', followUpNeeded: 'No', nextSch: '', status: 'Completed' })
+        })
+        addActivity('visit', 'Monitoring marked completed', m.resName)
+        toast('ok', 'Completed', 'Monitoring ' + id + ' marked as completed.')
+      },
+    })
+  }
+  markDoneRef.current = markDone
+
+  useEffect(() => {
+    const onForm = () => setMonModal({ kind: 'form', id: null })
+    const onEdit = e => setMonModal({ kind: 'form', id: e.detail.id })
+    const onDetail = e => setMonModal({ kind: 'detail', id: e.detail.id })
+    const onVisit = e => setMonModal({ kind: 'visit', id: e.detail.id })
+    const onHistory = e => setMonModal({ kind: 'history', id: e.detail.id })
+    const onMarkDone = e => markDoneRef.current && markDoneRef.current(e.detail.id)
+    const evs = [
+      ['open-mon-form', onForm],
+      ['open-mon-detail', onDetail],
+      ['open-mon-edit', onEdit],
+      ['open-mon-visit', onVisit],
+      ['open-mon-history', onHistory],
+      ['mon-mark-done', onMarkDone],
+    ]
+    evs.forEach(([name, fn]) => window.addEventListener(name, fn))
+    return () => evs.forEach(([name, fn]) => window.removeEventListener(name, fn))
+  }, [])
+
+  return <MonitoringModalsRender monModal={monModal} setMonModal={setMonModal} markDone={markDone} />
+}
+
+function MonitoringModalsRender({ monModal, setMonModal, markDone }) {
   const { db, update, addActivity } = useStore()
   const { confirmDialog, toast } = useNav()
 

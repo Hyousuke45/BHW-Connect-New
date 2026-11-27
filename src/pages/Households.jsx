@@ -155,14 +155,14 @@ export default function Households() {
           </div>
         </div>
       </div>
-
-      <HouseholdModals />
     </section>
   )
 }
 
 /* ============ Modals host (detail / forms / profiles) ============ */
-function HouseholdModals() {
+/* Always mounted at App level so open-* events from any page (e.g. Dashboard
+   quick actions) reach these listeners even when the Households page is not showing. */
+export function HouseholdModals() {
   const { db, update, addActivity } = useStore()
   const { confirmDialog, go } = useNav()
   const { openModal } = useNav()
