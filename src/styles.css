@@ -89,13 +89,18 @@ h1,h2,h3,h4{line-height:1.25}
 /* Supabase-connected badge on the login card */
 .login-mode{display:flex;align-items:center;justify-content:center;gap:6px;margin:-6px 0 14px;font-size:.76rem;font-weight:700;color:var(--g600);background:var(--g025);border:1px solid var(--g200);border-radius:999px;padding:6px 12px;width:fit-content;margin-left:auto;margin-right:auto}
 .login-mode .ico{width:14px;height:14px}
+/* mock-data badge: amber, distinct from the green Supabase one */
+.login-mode.mock{color:#8a5a00;background:#fdf3dd;border-color:#e9d49a}
 .login-cred{margin-top:14px;font-size:.76rem;background:var(--g025);border:1px dashed var(--g200);border-radius:10px;padding:8px 10px;color:var(--ink2)}
 .login-cred b{color:var(--g600)}
 .cred-toggle{width:100%;display:flex;align-items:center;gap:7px;background:none;border:none;padding:2px 2px 0;font:inherit;font-weight:600;color:var(--ink2);cursor:pointer;text-align:left}
 .cred-toggle .ico{color:var(--g500)}
 .cred-chev{transition:transform .18s;color:var(--ink3)}
 .cred-chev.open{transform:rotate(180deg)}
-.cred-list{display:grid;gap:5px;margin-top:8px}
+/* capped so the open list never grows the login card past the viewport */
+.cred-list{display:grid;gap:5px;margin-top:8px;max-height:198px;overflow-y:auto;padding-right:4px;scrollbar-width:thin}
+.cred-list::-webkit-scrollbar{width:5px}
+.cred-list::-webkit-scrollbar-thumb{background:var(--g200);border-radius:3px}
 .cred-row{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:9px;background:#fff;border:1px solid var(--line);cursor:pointer;text-align:left;transition:box-shadow .15s,border-color .15s;font:inherit}
 .cred-row:hover{border-color:var(--g300);box-shadow:var(--shadow)}
 .cred-row:active{transform:scale(.98)}

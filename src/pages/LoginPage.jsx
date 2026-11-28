@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import Icon from '../components/Icon'
 import { toast } from '../store'
 import { useStore } from '../store'
-import { supabase, supabaseConfigured } from '../lib/supabase'
+import { supabase, supabaseConfigured, mockMode } from '../lib/supabase'
 import { PUROKS } from '../constants'
 
 const PUROK_OPTS = PUROKS // purok assignment choices at registration
@@ -214,6 +214,9 @@ export default function LoginPage({ onLogin }) {
           <div className="login-sub">Barangay Health Worker Records System</div>
           {supabaseConfigured && (
             <div className="login-mode"><Icon name="okc" /><span>Connected to Supabase</span></div>
+          )}
+          {mockMode && (
+            <div className="login-mode mock"><Icon name="info" /><span>Mock Data · demo accounts &amp; seeded records</span></div>
           )}
         </div>
         <div className="login-cols">

@@ -56,6 +56,28 @@ Signing in with any account persists that user in the store (topbar, Account
 Information and profile edits follow the signed-in user). Account → Edit
 Profile / Change Password update the account inside the users list.
 
+## Data mode: mock vs Supabase (`VITE_USE_MOCK`)
+
+The app runs in one of two data modes, shown as a badge on the login card:
+
+| mode | when | auth | data |
+|---|---|---|---|
+| **Supabase (live)** | `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` set and `VITE_USE_MOCK` is false/unset | Supabase Auth | your project's tables |
+| **Mock** | no Supabase env, **or `VITE_USE_MOCK=true`** | demo accounts (local) | seeded demo data |
+
+`VITE_USE_MOCK=true` **forces mock mode even when Supabase env vars are
+configured** — useful for demos, offline work, or comparing data without
+unsetting your credentials. You can also flip it at runtime (before the bundle
+loads) with `window.BHW_USE_MOCK = true`, e.g. in `index.html`:
+
+```html
+<script>window.BHW_USE_MOCK = true</script>
+```
+
+In mock mode the login badge reads **"Mock Data · demo accounts & seeded
+records"** (amber); in live mode it reads **"Connected to Supabase"** (green).
+With the flag off and no credentials, the badge is simply hidden.
+
 ## Supabase backend (schema included)
 
 `supabase/` contains everything needed to move from localStorage to a real
