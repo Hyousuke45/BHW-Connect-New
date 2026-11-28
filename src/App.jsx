@@ -13,6 +13,7 @@ import Monitoring, { MonitoringModals } from './pages/Monitoring'
 import Reports from './pages/Reports'
 import Account from './pages/Account'
 import { useToasts } from './store'
+import { supabase } from './lib/supabase'
 
 // Navigation context: page + helpers to switch pages and open modals/confirms
 export const NavCtx = createContext(null)
@@ -30,6 +31,8 @@ function InnerApp() {
 
   const doLogout = () => {
     logAccountActivity('Logged out')
+    // end the Supabase session too, so a page refresh does not sign back in
+    if (supabase) { try { supabase.auth.signOut().catch(() => {}) } catch (e) { /* ignore */ } }
     setLoggedIn(false)
   }
 

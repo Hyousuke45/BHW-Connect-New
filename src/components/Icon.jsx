@@ -49,6 +49,8 @@ const ICONS = {
   history: '<path d="M13 3a9 9 0 0 0-9 9H1.8L5 15.5 8.2 12H6a7 7 0 1 1 2.1 5l1.5 1.5A9 9 0 1 0 13 3zm-1 5v5l4.2 2.5.8-1.3-3.5-2.1V8H12z" fill="currentColor"/>',
   camera2: '<path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8-3h-3.2l-1.4-2H8.6L7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" fill="currentColor"/>',
   pin: '<path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" fill="currentColor"/>',
+  mail: '<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 7L4.2 6v12h15.6V6L12 11zm0-2 7-4.5H5L12 9z" fill="currentColor"/>',
+  phone: '<path d="M6.6 2.9a1.7 1.7 0 0 0-2.4 0L2.6 4.5a2.3 2.3 0 0 0-.5 2.6 17.2 17.2 0 0 0 8.8 8.8 2.3 2.3 0 0 0 2.6-.5l1.6-1.6a1.7 1.7 0 0 0 0-2.4l-2.1-2.1a1.7 1.7 0 0 0-1.9-.3l-1.3.6a11.5 11.5 0 0 1-2.4-2.4l.6-1.3a1.7 1.7 0 0 0-.3-1.9L6.6 2.9z" fill="currentColor"/>',
 }
 
 export default function Icon({ name, style, className }) {
